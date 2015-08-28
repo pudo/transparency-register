@@ -1,7 +1,7 @@
 PY=pyenv/bin/python
 
 scrape: pyenv/bin/python
-	$(PY) scraper_accreditations.py
+	$(PY) scraper.py
 
 pyenv/bin/python:
 	virtualenv pyenv

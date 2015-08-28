@@ -15,7 +15,8 @@ reg_country_of_member = engine['reg_country_of_member']
 
 
 def dateconv(ds):
-    return datetime.strptime(ds.split("+")[0], "%Y-%m-%dT%H:%M:%S.%f")
+    if ds is not None:
+        return datetime.strptime(ds.split("+")[0], "%Y-%m-%dT%H:%M:%S.%f")
 
 
 def shortdateconv(ds):

@@ -1,4 +1,5 @@
 from lxml import etree
+from datetime import datetime
 # from pprint import pprint
 
 import logging
@@ -35,26 +36,20 @@ def parse_rep(rep_el):
     rep['sub_category'] = rep_el.findtext('.//' + NS + 'subCategory')
 
     legal = {}
-    legal['title'] = rep_el.findtext(NS + 'legal/' + NS + 'title')
-    legal['first_name'] = rep_el.findtext(NS + 'legal/' + NS +
-            'firstName')
-    legal['last_name'] = rep_el.findtext(NS + 'legal/' + NS +
-            'lastName')
-    legal['position'] = rep_el.findtext(NS + 'legal/' + NS +
-            'position')
+    legal['title'] = rep_el.findtext(NS + 'legalResp/' + NS + 'title')
+    legal['first_name'] = rep_el.findtext(NS + 'legalResp/' + NS + 'firstName')
+    legal['last_name'] = rep_el.findtext(NS + 'legalResp/' + NS + 'lastName')
+    legal['position'] = rep_el.findtext(NS + 'legalResp/' + NS + 'position')
     rep['legal_person'] = legal
 
-    head = {}
-    head['title'] = rep_el.findtext(NS + 'head/' + NS + 'title')
-    head['first_name'] = rep_el.findtext(NS + 'head/' + NS +
-            'firstName')
-    head['last_name'] = rep_el.findtext(NS + 'head/' + NS +
-            'lastName')
-    head['position'] = rep_el.findtext(NS + 'head/' + NS +
-            'position')
-    rep['head_person'] = head
+    eu = {}
+    eu['title'] = rep_el.findtext(NS + 'euRelationsResp/' + NS + 'title')
+    eu['first_name'] = rep_el.findtext(NS + 'euRelationsResp/' + NS + 'firstName')
+    eu['last_name'] = rep_el.findtext(NS + 'euRelationsResp/' + NS + 'lastName')
+    eu['position'] = rep_el.findtext(NS + 'euRelationsResp/' + NS + 'position')
+    rep['eu_person'] = eu
 
-    rep['contact_street'] = rep_el.findtext(NS + 'contactDetails/' + NS + 'street')
+    rep['contact_street'] = rep_el.findtext(NS + 'contactDetails/' + NS + 'addressline1')
     rep['contact_number'] = rep_el.findtext(NS + 'contactDetails/' + NS + 'number')
     rep['contact_post_code'] = rep_el.findtext(NS + 'contactDetails/' + NS
             + 'postCode')
@@ -72,29 +67,48 @@ def parse_rep(rep_el):
             + 'phoneNumber')
     rep['contact_more'] = rep_el.findtext(NS + 'contactDetails/' + NS
             + 'moreContactDetails')
+
     rep['goals'] = rep_el.findtext(NS + 'goals')
     rep['networking'] = rep_el.findtext(NS + 'networking')
-    rep['activities'] = rep_el.findtext(NS + 'activities')
+
+    # rep['activities'] = rep_el.findtext(NS + 'activities')
+    act_el = rep_el.find(NS + 'activities')
+    rep['activity_eu_legislative'] = act_el.findtext(NS + 'activityEuLegislative')
+    rep['activity_communication'] = act_el.findtext(NS + 'activityRelevantComm')
+    rep['activity_high_level_groups'] = act_el.findtext(NS + 'activityHighLevelGroups')
+    rep['activity_consult_committee'] = act_el.findtext(NS + 'activityConsultCommittees')
+    rep['activity_expert_groups'] = act_el.findtext(NS + 'activityExpertGroups')
+    rep['activity_inter_groups'] = act_el.findtext(NS + 'activityInterGroups')
+    rep['activity_industry_forums'] = act_el.findtext(NS + 'activityIndustryForums')
+    rep['activity_other'] = act_el.findtext(NS + 'activityOther')
+
     rep['code_of_conduct'] = rep_el.findtext(NS + 'codeOfConduct')
-    rep['members'] = intconv(rep_el.findtext(NS + 'members'))
     rep['action_fields'] = []
-    for field in rep_el.findall('.//' + NS + 'actionField/' + NS +
-            'actionField'):
+    for field in rep_el.findall('.//' + NS + 'actionField/' + NS + 'actionField'):
         rep['action_fields'].append(field.text)
     rep['interests'] = []
-    for interest in rep_el.findall('.//' + NS + 'interest/' + NS +
-            'name'):
+    for interest in rep_el.findall('.//' + NS + 'interest/' + NS + 'name'):
         rep['interests'].append(interest.text)
+
     rep['number_of_natural_persons'] = intconv(rep_el.findtext('.//' + NS + 'structure/' + NS
             + 'numberOfNaturalPersons'))
     rep['number_of_organisations'] = intconv(rep_el.findtext('.//' + NS + 'structure/' + NS
             + 'numberOfOrganisations'))
+
+    mem_el = rep_el.find(NS + 'members')
+    rep['members_100_percent'] = mem_el.findtext(NS + 'members100Percent')
+    rep['members_25_percent'] = mem_el.findtext(NS + 'members25Percent')
+    rep['members_total'] = mem_el.findtext(NS + 'members')
+    rep['members_fte'] = mem_el.findtext(NS + 'membersFTE')
+    rep['members_info'] = mem_el.findtext(NS + 'infoMembers')
+
     #pprint((rep['numberOfNaturalPersons'], rep['numberOfOrganisations']))
     rep['country_of_members'] = []
     el = rep_el.find(NS + 'structure/' + NS + 'countries')
     if el is not None:
         for country in el.findall('.//' + NS + 'country'):
             rep['country_of_members'].append(country.text)
+
     rep['organisations'] = []
     el = rep_el.find(NS + 'structure/' + NS + 'organisations')
     if el is not None:
@@ -135,6 +149,7 @@ def parse_rep(rep_el):
         'donation'))
     fd['other_sources_contributions'] = intconv(fi.findtext('.//' + NS +
         'contributions'))
+
     # TODO customisedOther
     cps = fi.find('.//' + NS + 'customisedOther')
     fd['other_customized'] = []
@@ -192,8 +207,11 @@ def parse_rep(rep_el):
                     'min': intconv(min_),
                     'max': intconv(max_)
                     })
+    # from pprint import pprint
+    # pprint(rep)
     rep['fd'] = fd
     return rep
+
 
 def load_person(person, role, childBase):
     person_ = childBase.copy()
@@ -232,8 +250,11 @@ def load_finances(financialData, childBase):
 
 
 def load_rep(rep):
-    #etlId = rep['etlId'] = "%s//%s" % (rep['identificationCode'],
-    #                                   rep['lastUpdateDate'].isoformat())
+    rep['first_seen'] = datetime.utcnow()
+    rep['last_seen'] = rep['first_seen']
+    existing = reg_representative.find_one(identification_code=rep['identification_code'])
+    if existing is not None:
+        rep['first_seen'] = existing.get('first_seen', rep['first_seen'])
     etlId = rep['etl_id'] = "%s//ALL" % rep['identification_code']
     childBase = {'representative_etl_id': etlId,
                  'representative_update_date': rep['last_update_date']}
@@ -241,7 +262,7 @@ def load_rep(rep):
         log.error("Unnamed representative: %r", rep)
         return
     load_person(rep.pop('legal_person'), 'legal', childBase)
-    load_person(rep.pop('head_person'), 'head', childBase)
+    load_person(rep.pop('eu_person'), 'eu', childBase)
     for actionField in rep.pop('action_fields'):
         rec = childBase.copy()
         rec['action_field'] = actionField
@@ -265,7 +286,6 @@ def load_rep(rep):
 
     load_finances(rep.pop('fd'), childBase)
     rep['name'] = rep['original_name'].strip()
-    rep['network_extracted'] = False
     log.info("Representative: %s", rep['name'])
     reg_representative.upsert(rep, ['etl_id'])
 
@@ -274,9 +294,11 @@ def parse():
     res = requests.get(URL, stream=True)
     res.raw.decode_content = True
     for evt, el in etree.iterparse(res.raw):
-        if evt == 'end' and el.tag == NS + 'interestRepresentative':
-            yield parse_rep(el)
-            el.clear()
+        if evt != 'end' or el.tag != NS + 'interestRepresentative':
+            continue
+        # print etree.tostring(el, pretty_print=True)
+        yield parse_rep(el)
+        el.clear()
 
 
 def extract():

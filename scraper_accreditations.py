@@ -1,10 +1,11 @@
 import logging
+from datetime import datetime
 
 import requests
 from lxml import etree
 # from pprint import pprint
 
-from util import reg_person, reg_representative, engine
+from util import reg_representative, engine
 from util import shortdateconv as dateconv
 
 log = logging.getLogger('scraper_accreditations')
@@ -20,6 +21,7 @@ def parse(content):
         ap = {
             'org_identification_code': ap_el.findtext(NS + 'orgIdentificationCode'),
             'number_of_ir': ap_el.findtext(NS + 'numberOfIR'),
+            'xml': etree.tostring(ap_el),
             'org_name': ap_el.findtext(NS + 'orgName'),
             'title': ap_el.findtext(NS + 'title'),
             'first_name': ap_el.findtext(NS + 'firstName'),
@@ -31,13 +33,20 @@ def parse(content):
 
 
 def save(tx, person, orgs):
+    table = tx['reg_person']
     person['role'] = 'accredited'
+    org_id = person['org_identification_code']
     name = '%s %s %s' % (person['title'] or '',
                          person['first_name'] or '',
                          person['last_name'] or '')
-    person['name'] = name.strip()
+    name = name.strip()
+    person['name'] = name
+    person['first_seen'] = datetime.utcnow()
+    person['last_seen'] = datetime.utcnow()
+    existing = table.find_one(name=name, org_identification_code=org_id)
+    if existing is not None:
+        person['first_seen'] = existing['first_seen']
     log.debug("Accreditation: %s", name)
-    org_id = person['org_identification_code']
     if org_id not in orgs:
         recs = list(reg_representative.find(identification_code=org_id))
         if len(recs):
@@ -49,7 +58,8 @@ def save(tx, person, orgs):
 
     if orgs[org_id]:
         person['representative_etl_id'] = orgs[org_id]['etl_id']
-    tx['reg_person'].upsert(person, ['representative_etl_id', 'role', 'name'])
+
+    table.upsert(person, ['representative_etl_id', 'role', 'name'])
 
 
 def extract_data(xml):

@@ -5,7 +5,7 @@ import requests
 from lxml import etree
 # from pprint import pprint
 
-from util import reg_representative, engine
+from util import engine
 from util import shortdateconv as dateconv
 
 log = logging.getLogger('scraper_accreditations')
@@ -21,7 +21,7 @@ def parse(content):
         ap = {
             'org_identification_code': ap_el.findtext(NS + 'orgIdentificationCode'),
             'number_of_ir': ap_el.findtext(NS + 'numberOfIR'),
-            'xml': etree.tostring(ap_el),
+            # 'xml': etree.tostring(ap_el),
             'org_name': ap_el.findtext(NS + 'orgName'),
             'title': ap_el.findtext(NS + 'title'),
             'first_name': ap_el.findtext(NS + 'firstName'),
@@ -48,7 +48,8 @@ def save(tx, person, orgs):
         person['first_seen'] = existing['first_seen']
     log.debug("Accreditation: %s", name)
     if org_id not in orgs:
-        recs = list(reg_representative.find(identification_code=org_id))
+        rep_table = tx['reg_representative']
+        recs = list(rep_table.find(identification_code=org_id))
         if len(recs):
             orgs[org_id] = max(recs, key=lambda o: o['last_update_date'])
         else:

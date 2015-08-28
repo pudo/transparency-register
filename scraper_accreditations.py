@@ -15,9 +15,12 @@ _NS = "http://ec.europa.eu/transparencyregister/accreditedPerson/V1"
 NS = '{%s}' % _NS
 
 
-def parse(content):
-    doc = etree.fromstring(content)
-    for ap_el in doc.findall('.//' + NS + 'accreditedPerson'):
+def parse():
+    res = requests.get(URL, stream=True)
+    res.raw.decode_content = True
+    for evt, ap_el in etree.iterparse(res.raw):
+        if evt != 'end' or ap_el.tag != NS + 'accreditedPerson':
+            continue
         ap = {
             'org_identification_code': ap_el.findtext(NS + 'orgIdentificationCode'),
             'number_of_ir': ap_el.findtext(NS + 'numberOfIR'),
@@ -30,6 +33,7 @@ def parse(content):
             'end_date': dateconv(ap_el.findtext(NS + 'accreditationEndDate')),
             }
         yield ap
+        ap_el.clear()
 
 
 def save(tx, person, orgs):
@@ -42,10 +46,10 @@ def save(tx, person, orgs):
     name = name.strip()
     person['name'] = name
     person['first_seen'] = datetime.utcnow()
-    person['last_seen'] = datetime.utcnow()
+    person['last_seen'] = person['first_seen']
     existing = table.find_one(name=name, org_identification_code=org_id)
     if existing is not None:
-        person['first_seen'] = existing['first_seen']
+        person['first_seen'] = existing.get('first_seen', person['first_seen'])
     log.debug("Accreditation: %s", name)
     if org_id not in orgs:
         rep_table = tx['reg_representative']
@@ -63,22 +67,16 @@ def save(tx, person, orgs):
     table.upsert(person, ['representative_etl_id', 'role', 'name'])
 
 
-def extract_data(xml):
+def extract():
     orgs = {}
     log.info("Extracting accredditation data...")
     with engine as tx:
-        for i, ap in enumerate(parse(xml)):
+        for i, ap in enumerate(parse()):
             save(tx, ap, orgs)
             if i % 100 == 0:
                 log.info("Extracted: %s...", i)
 
 
-def extract():
-    res = requests.get(URL)
-    extract_data(res.content)
-
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     extract()
-

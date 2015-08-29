@@ -118,95 +118,96 @@ def parse_rep(rep_el):
             org['number_of_members'] = org_el.findtext(NS + 'numberOfMembers')
             rep['organisations'].append(org)
 
-    fd_el = rep_el.find(NS + 'financialData')
     fd = {}
-    fd['start_date'] = dateconv(fd_el.findtext(NS + 'startDate'))
-    fd['end_date'] = dateconv(fd_el.findtext(NS + 'endDate'))
-    fd['eur_sources_procurement'] = intconv(fd_el.findtext(NS + 'eurSourcesProcurement'))
-    fd['eur_sources_grants'] = intconv(fd_el.findtext(NS + 'eurSourcesGrants'))
-    fi = fd_el.find(NS + 'financialInformation')
-    fd['type'] = fi.get(SI + 'type')
-    #import ipdb; ipdb.set_trace()
-    fd['total_budget'] = intconv(fi.findtext('.//' + NS +
-        'total_budget'))
-    fd['public_financing_total'] = intconv(fi.findtext('.//' + NS +
-        'totalPublicFinancing'))
-    fd['public_financing_national'] = intconv(fi.findtext('.//' + NS +
-        'nationalSources'))
-    fd['public_financing_infranational'] = intconv(fi.findtext('.//' + NS +
-        'infranationalSources'))
-    cps = fi.find('.//' + NS + 'customisedPublicSources')
-    fd['public_customized'] = []
-    if cps is not None:
-        for src_el in cps.findall(NS + 'customizedSource'):
-            src = {}
-            src['name'] = src_el.findtext(NS + 'name')
-            src['amount'] = intconv(src_el.findtext(NS + 'amount'))
-            fd['public_customized'].append(src)
-    fd['other_sources_total'] = intconv(fi.findtext('.//' + NS +
-        'totalOtherSources'))
-    fd['other_sources_donation'] = intconv(fi.findtext('.//' + NS +
-        'donation'))
-    fd['other_sources_contributions'] = intconv(fi.findtext('.//' + NS +
-        'contributions'))
+    fd_el = rep_el.find(NS + 'financialData')
+    if fd_el is not None:
+        fd['start_date'] = dateconv(fd_el.findtext(NS + 'startDate'))
+        fd['end_date'] = dateconv(fd_el.findtext(NS + 'endDate'))
+        fd['eur_sources_procurement'] = intconv(fd_el.findtext(NS + 'eurSourcesProcurement'))
+        fd['eur_sources_grants'] = intconv(fd_el.findtext(NS + 'eurSourcesGrants'))
+        fi = fd_el.find(NS + 'financialInformation')
+        fd['type'] = fi.get(SI + 'type')
+        #import ipdb; ipdb.set_trace()
+        fd['total_budget'] = intconv(fi.findtext('.//' + NS +
+            'total_budget'))
+        fd['public_financing_total'] = intconv(fi.findtext('.//' + NS +
+            'totalPublicFinancing'))
+        fd['public_financing_national'] = intconv(fi.findtext('.//' + NS +
+            'nationalSources'))
+        fd['public_financing_infranational'] = intconv(fi.findtext('.//' + NS +
+            'infranationalSources'))
+        cps = fi.find('.//' + NS + 'customisedPublicSources')
+        fd['public_customized'] = []
+        if cps is not None:
+            for src_el in cps.findall(NS + 'customizedSource'):
+                src = {}
+                src['name'] = src_el.findtext(NS + 'name')
+                src['amount'] = intconv(src_el.findtext(NS + 'amount'))
+                fd['public_customized'].append(src)
+        fd['other_sources_total'] = intconv(fi.findtext('.//' + NS +
+            'totalOtherSources'))
+        fd['other_sources_donation'] = intconv(fi.findtext('.//' + NS +
+            'donation'))
+        fd['other_sources_contributions'] = intconv(fi.findtext('.//' + NS +
+            'contributions'))
 
-    # TODO customisedOther
-    cps = fi.find('.//' + NS + 'customisedOther')
-    fd['other_customized'] = []
-    if cps is not None:
-        for src_el in cps.findall(NS + 'customizedSource'):
-            src = {}
-            src['name'] = src_el.findtext(NS + 'name')
-            src['amount'] = intconv(src_el.findtext(NS + 'amount'))
-            fd['other_customized'].append(src)
+        # TODO customisedOther
+        cps = fi.find('.//' + NS + 'customisedOther')
+        fd['other_customized'] = []
+        if cps is not None:
+            for src_el in cps.findall(NS + 'customizedSource'):
+                src = {}
+                src['name'] = src_el.findtext(NS + 'name')
+                src['amount'] = intconv(src_el.findtext(NS + 'amount'))
+                fd['other_customized'].append(src)
 
-    fd['direct_rep_costs_min'] = intconv(fi.findtext('.//' + NS +
-        'directRepresentationCosts//' + NS + 'min'))
-    fd['direct_rep_costs_max'] = intconv(fi.findtext('.//' + NS +
-        'directRepresentationCosts//' + NS + 'max'))
-    fd['cost_min'] = intconv(fi.findtext('.//' + NS +
-        'cost//' + NS + 'min'))
-    fd['cost_max'] = intconv(fi.findtext('.//' + NS +
-        'cost//' + NS + 'max'))
-    fd['cost_absolute'] = intconv(fi.findtext('.//' + NS +
-        'cost//' + NS + 'absoluteAmount'))
-    fd['turnover_min'] = intconv(fi.findtext('.//' + NS +
-        'turnover//' + NS + 'min'))
-    fd['turnover_max'] = intconv(fi.findtext('.//' + NS +
-        'turnover//' + NS + 'max'))
-    fd['turnover_absolute'] = intconv(fi.findtext('.//' + NS +
-        'turnover//' + NS + 'absoluteAmount'))
-    tb = fi.find(NS + 'turnoverBreakdown')
-    fd['turnover_breakdown'] = []
-    if tb is not None:
-        for range_ in tb.findall(NS + 'customersGroupsInAbsoluteRange'):
-            max_ = range_.findtext('.//' + NS + 'max')
-            min_ = range_.findtext('.//' + NS + 'min')
-            for customer in range_.findall('.//' + NS + 'customer'):
-                fd['turnover_breakdown'].append({
-                    'name': customer.findtext(NS + 'name'),
-                    'min': intconv(min_),
-                    'max': intconv(max_)
-                    })
-        for range_ in tb.findall(NS + 'customersGroupsInPercentageRange'):
-            # FIXME: I hate political compromises going into DB design
-            # so directly.
-            max_ = range_.findtext('.//' + NS + 'max')
-            if max_:
-                max_ = float(max_) / 100.0 * \
-                        float(fd['turnover_absolute'] or
-                              fd['turnover_max'] or fd['turnover_min'])
-            min_ = range_.findtext('.//' + NS + 'min')
-            if min_:
-                min_ = float(min_) / 100.0 * \
-                        float(fd['turnover_absolute'] or
-                              fd['turnover_min'] or fd['turnover_max'])
-            for customer in range_.findall('.//' + NS + 'customer'):
-                fd['turnover_breakdown'].append({
-                    'name': customer.findtext(NS + 'name'),
-                    'min': intconv(min_),
-                    'max': intconv(max_)
-                    })
+        fd['direct_rep_costs_min'] = intconv(fi.findtext('.//' + NS +
+            'directRepresentationCosts//' + NS + 'min'))
+        fd['direct_rep_costs_max'] = intconv(fi.findtext('.//' + NS +
+            'directRepresentationCosts//' + NS + 'max'))
+        fd['cost_min'] = intconv(fi.findtext('.//' + NS +
+            'cost//' + NS + 'min'))
+        fd['cost_max'] = intconv(fi.findtext('.//' + NS +
+            'cost//' + NS + 'max'))
+        fd['cost_absolute'] = intconv(fi.findtext('.//' + NS +
+            'cost//' + NS + 'absoluteAmount'))
+        fd['turnover_min'] = intconv(fi.findtext('.//' + NS +
+            'turnover//' + NS + 'min'))
+        fd['turnover_max'] = intconv(fi.findtext('.//' + NS +
+            'turnover//' + NS + 'max'))
+        fd['turnover_absolute'] = intconv(fi.findtext('.//' + NS +
+            'turnover//' + NS + 'absoluteAmount'))
+        tb = fi.find(NS + 'turnoverBreakdown')
+        fd['turnover_breakdown'] = []
+        if tb is not None:
+            for range_ in tb.findall(NS + 'customersGroupsInAbsoluteRange'):
+                max_ = range_.findtext('.//' + NS + 'max')
+                min_ = range_.findtext('.//' + NS + 'min')
+                for customer in range_.findall('.//' + NS + 'customer'):
+                    fd['turnover_breakdown'].append({
+                        'name': customer.findtext(NS + 'name'),
+                        'min': intconv(min_),
+                        'max': intconv(max_)
+                        })
+            for range_ in tb.findall(NS + 'customersGroupsInPercentageRange'):
+                # FIXME: I hate political compromises going into DB design
+                # so directly.
+                max_ = range_.findtext('.//' + NS + 'max')
+                if max_:
+                    max_ = float(max_) / 100.0 * \
+                            float(fd['turnover_absolute'] or
+                                  fd['turnover_max'] or fd['turnover_min'])
+                min_ = range_.findtext('.//' + NS + 'min')
+                if min_:
+                    min_ = float(min_) / 100.0 * \
+                            float(fd['turnover_absolute'] or
+                                  fd['turnover_min'] or fd['turnover_max'])
+                for customer in range_.findall('.//' + NS + 'customer'):
+                    fd['turnover_breakdown'].append({
+                        'name': customer.findtext(NS + 'name'),
+                        'min': intconv(min_),
+                        'max': intconv(max_)
+                        })
     # from pprint import pprint
     # pprint(rep)
     rep['fd'] = fd
@@ -225,8 +226,7 @@ def load_person(person, role, childBase):
 
 
 def load_finances(financialData, childBase):
-    etlId = '%s//%s' % (financialData['start_date'].isoformat(),
-                        financialData['end_date'].isoformat())
+    etlId = '%s//%s' % (financialData['start_date'], financialData['end_date'])
 
     financial_sources = \
         [(s, 'other') for s in financialData.pop("other_customized")] + \
@@ -284,16 +284,19 @@ def load_rep(rep):
         rec['name'] = organisation['name'].strip()
         reg_organisation.upsert(rec, ['representative_etl_id', 'name'])
 
-    load_finances(rep.pop('fd'), childBase)
+    fd = rep.pop('fd')
+    if len(fd.keys()):
+        load_finances(fd, childBase)
     rep['name'] = rep['original_name'].strip()
     log.info("Representative: %s", rep['name'])
     reg_representative.upsert(rep, ['etl_id'])
 
 
 def parse():
+    # parser = etree.XMLParser(recover=True)
     res = requests.get(URL, stream=True)
     res.raw.decode_content = True
-    for evt, el in etree.iterparse(res.raw):
+    for evt, el in etree.iterparse(res.raw, recover=True):
         if evt != 'end' or el.tag != NS + 'interestRepresentative':
             continue
         # print etree.tostring(el, pretty_print=True)

@@ -99,11 +99,12 @@ def parse_rep(rep_el):
             + 'numberOfOrganisations'))
 
     mem_el = rep_el.find(NS + 'members')
-    rep['members_100_percent'] = mem_el.findtext(NS + 'members100Percent')
-    rep['members_25_percent'] = mem_el.findtext(NS + 'members25Percent')
-    rep['members_total'] = mem_el.findtext(NS + 'members')
-    rep['members_fte'] = mem_el.findtext(NS + 'membersFTE')
-    rep['members_info'] = mem_el.findtext(NS + 'infoMembers')
+    if mem_el is not None:
+        rep['members_100_percent'] = mem_el.findtext(NS + 'members100Percent')
+        rep['members_25_percent'] = mem_el.findtext(NS + 'members25Percent')
+        rep['members_total'] = mem_el.findtext(NS + 'members')
+        rep['members_fte'] = mem_el.findtext(NS + 'membersFTE')
+        rep['members_info'] = mem_el.findtext(NS + 'infoMembers')
 
     #pprint((rep['numberOfNaturalPersons'], rep['numberOfOrganisations']))
     rep['country_of_members'] = []

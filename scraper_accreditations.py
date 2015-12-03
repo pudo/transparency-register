@@ -41,7 +41,7 @@ def parse(xml_file):
 
 
 def save(tx, person, orgs):
-    table = tx['reg_person']
+    table = tx['eu_tr_person']
     person['role'] = 'accredited'
     org_id = person['org_identification_code']
     name = '%s %s %s' % (person['title'] or '',
@@ -56,7 +56,7 @@ def save(tx, person, orgs):
         person['first_seen'] = existing.get('first_seen', person['first_seen'])
     log.debug("Accreditation: %s", name)
     if org_id not in orgs:
-        rep_table = tx['reg_representative']
+        rep_table = tx['eu_tr_representative']
         recs = list(rep_table.find(identification_code=org_id))
         if len(recs):
             orgs[org_id] = max(recs, key=lambda o: o['last_update_date'])

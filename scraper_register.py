@@ -1,3 +1,4 @@
+import sys
 from lxml import etree
 from datetime import datetime
 # from pprint import pprint
@@ -14,6 +15,7 @@ from util import reg_financial_data_custom_source
 from util import dateconv, intconv
 
 log = logging.getLogger('scraper_interests')
+logging.basicConfig(level=logging.INFO)
 
 URL = 'http://ec.europa.eu/transparencyregister/public/consultation/statistics.do?action=getLobbyistsXml&fileType=NEW'
 NS2 = "{http://www.w3.org/1999/xlink}"
@@ -73,14 +75,15 @@ def parse_rep(rep_el):
 
     # rep['activities'] = rep_el.findtext(NS + 'activities')
     act_el = rep_el.find(NS + 'activities')
-    rep['activity_eu_legislative'] = act_el.findtext(NS + 'activityEuLegislative')
-    rep['activity_communication'] = act_el.findtext(NS + 'activityRelevantComm')
-    rep['activity_high_level_groups'] = act_el.findtext(NS + 'activityHighLevelGroups')
-    rep['activity_consult_committee'] = act_el.findtext(NS + 'activityConsultCommittees')
-    rep['activity_expert_groups'] = act_el.findtext(NS + 'activityExpertGroups')
-    rep['activity_inter_groups'] = act_el.findtext(NS + 'activityInterGroups')
-    rep['activity_industry_forums'] = act_el.findtext(NS + 'activityIndustryForums')
-    rep['activity_other'] = act_el.findtext(NS + 'activityOther')
+    if act_el is not None:
+        rep['activity_eu_legislative'] = act_el.findtext(NS + 'activityEuLegislative')
+        rep['activity_communication'] = act_el.findtext(NS + 'activityRelevantComm')
+        rep['activity_high_level_groups'] = act_el.findtext(NS + 'activityHighLevelGroups')
+        rep['activity_consult_committee'] = act_el.findtext(NS + 'activityConsultCommittees')
+        rep['activity_expert_groups'] = act_el.findtext(NS + 'activityExpertGroups')
+        rep['activity_inter_groups'] = act_el.findtext(NS + 'activityInterGroups')
+        rep['activity_industry_forums'] = act_el.findtext(NS + 'activityIndustryForums')
+        rep['activity_other'] = act_el.findtext(NS + 'activityOther')
 
     rep['code_of_conduct'] = rep_el.findtext(NS + 'codeOfConduct')
     rep['action_fields'] = []

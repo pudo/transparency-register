@@ -1,3 +1,4 @@
+import sys
 import logging
 from datetime import datetime
 
@@ -9,16 +10,19 @@ from util import engine
 from util import shortdateconv as dateconv
 
 log = logging.getLogger('scraper_accreditations')
+logging.basicConfig(level=logging.INFO)
 
-URL = "http://ec.europa.eu/transparencyregister/public/consultation/statistics.do?action=getLobbyistsXml&fileType=ACCREDITED_PERSONS"
+# URL = "http://ec.europa.eu/transparencyregister/public/consultation/statistics.do?action=getLobbyistsXml&fileType=ACCREDITED_PERSONS"
 _NS = "http://ec.europa.eu/transparencyregister/accreditedPerson/V1"
 NS = '{%s}' % _NS
 
 
-def parse():
-    res = requests.get(URL, stream=True)
-    res.raw.decode_content = True
-    for evt, ap_el in etree.iterparse(res.raw):
+def parse(xml_file):
+    print "XML", xml_file
+    fh = open(xml_file, 'r')
+    # res = requests.get(URL, stream=True)
+    # res.raw.decode_content = True
+    for evt, ap_el in etree.iterparse(fh):
         if evt != 'end' or ap_el.tag != NS + 'accreditedPerson':
             continue
         ap = {
@@ -31,7 +35,7 @@ def parse():
             'last_name': ap_el.findtext(NS + 'lastName'),
             'start_date': dateconv(ap_el.findtext(NS + 'accreditationStartDate')),
             'end_date': dateconv(ap_el.findtext(NS + 'accreditationEndDate')),
-            }
+        }
         yield ap
         ap_el.clear()
 
@@ -67,16 +71,15 @@ def save(tx, person, orgs):
     table.upsert(person, ['representative_etl_id', 'role', 'name'])
 
 
-def extract():
+def extract(xml_file):
     orgs = {}
     log.info("Extracting accredditation data...")
     with engine as tx:
-        for i, ap in enumerate(parse()):
+        for i, ap in enumerate(parse(xml_file)):
             save(tx, ap, orgs)
             if i % 100 == 0:
                 log.info("Extracted: %s...", i)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    extract()
+    extract(sys.argv[1])

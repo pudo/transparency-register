@@ -1,17 +1,19 @@
+import os
 import dataset
 from datetime import datetime
 
-engine = dataset.connect('sqlite:///data.sqlite')
+db = os.environ.get('DATABASE_URI', 'sqlite:///data.sqlite')
+engine = dataset.connect(db)
 
-reg_person = engine['reg_person']
-reg_financial_data = engine['reg_financial_data']
-reg_financial_data_custom_source = engine['reg_financial_data_custom_source']
-reg_financial_data_turnover = engine['reg_financial_data_turnover']
-reg_representative = engine['reg_representative']
-reg_organisation = engine['reg_organisation']
-reg_action_field = engine['reg_action_field']
-reg_interest = engine['reg_interest']
-reg_country_of_member = engine['reg_country_of_member']
+reg_person = engine['eu_tr_person']
+reg_financial_data = engine['eu_tr_financial_data']
+reg_financial_data_custom_source = engine['eu_tr_financial_data_custom_source']
+reg_financial_data_turnover = engine['eu_tr_financial_data_turnover']
+reg_representative = engine['eu_tr_representative']
+reg_organisation = engine['eu_tr_organisation']
+reg_action_field = engine['eu_tr_action_field']
+reg_interest = engine['eu_tr_interest']
+reg_country_of_member = engine['eu_tr_country_of_member']
 
 
 def dateconv(ds):
